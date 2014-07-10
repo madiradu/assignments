@@ -1,0 +1,85 @@
+import Control.Monad            ( foldM_, when )
+import System.Exit              ( exitSuccess )
+import System.Console.Haskeline ( runInputT, defaultSettings, getInputChar )
+import System.Console.ANSI      ( clearScreen )
+import Data.List
+import System.Random						(randomR)
+import Data.Text								(chunksOf)
+inputList = [0,0,2,4,0,4,4,8,0,0,2,0,2,0,2,0,2,0,8,8]
+data WhatToDo = DoubleIt | ZeroIt | DoNothing deriving (Show, Eq)
+compareme x y =
+  if x == y
+    then 1
+  else y
+compareme2 x y =
+  if x == 1
+    then 3
+  else y
+isTrue x=
+  if x == 1 || x == 3
+    then True
+  else False
+isAction x =
+  if x ==1
+    then ZeroIt
+  else if x == 3
+    then DoubleIt
+  else DoNothing
+action = snd . snd
+nr = fst
+nr2 = (*2) . (nr)
+doAction y =
+  if (DoNothing == action y)
+    then nr y
+  else if (action y == ZeroIt)
+    then 0
+  else nr2 y
+def x y=
+	if x < 20
+	  then y ++ (replicate (20 - x) 0)
+	else y
+swipe inputList direction = do
+	let listx = filter (>0) inputList
+	let funcx listx= 
+		if(direction == 'r') 
+			then reverse listx
+		else if (direction == 'u')
+			then transpose listx
+		else if (direction == 'd')
+			then transpose (reverse listx)
+		else
+			listx
+	let list1 = funcx listx
+	let func3 = reverse . (scanl1 compareme2) . reverse . (scanl1 compareme)
+	let list3 = func3 list1
+	let list4 = map (isTrue) list3
+	let list5 = zip list1 (zip list4 $ map (isAction) list3)
+	let func4 = map doAction
+	let list6 = filter (>0) $ func4 list5
+	def (length list6) list6
+anotherFun list = do
+	let alist = chunksOf 4 list
+	let fc = putStrLn . show
+	mapM_ fc  alist
+a = randomR(0,2)
+input = replicate 20 a	
+impureStepperFunction :: Int -> Int -> IO Int
+impureStepperFunction i _ = do
+  maybeKeyboardInput <- runInputT defaultSettings $ getInputChar ""
+  clearScreen
+	anotherFun input
+ -- print "You pressed:"
+  --print maybeKeyboardInput
+	when (maybeKeyboardInput ==Just 'a') anotherFun( swipe input 'l')
+	when (maybeKeyboardInput ==Just 'd') anotherFun(swipe input 'r')
+	when (maybeKeyboardInput ==Just 'w') anotherFun(swipe input 'u')
+	when (maybeKeyboardInput ==Just 'x') anotherFun(swipe input 'd')
+  when (maybeKeyboardInput == Just 'q') exitSuccess
+  --mapM_ print list7
+  return $ i + 1
+
+main :: IO ()
+main = do
+  clearScreen
+  foldM_ impureStepperFunction 1 [1..]
+  return ()
